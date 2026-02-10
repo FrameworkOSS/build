@@ -3,7 +3,9 @@ cleanup() {
   unset info error fatal
   unset ROOT PORTAL ENGINE APPS FEAT OUT APPS_OUT FEAT_OUT BUILD BUILDER LOGS APPS_LOG FEAT_LOG
   unset hidelog hide cd mkdir rm
+  unset init clean
   unset gobuild
+  unset mkbuilder
 }
 cleanup
 
@@ -61,20 +63,29 @@ export LOGS="$BUILD/logs"
 export APPS_LOG="$LOGS/apps"
 export FEAT_LOG="$LOGS/features"
 
+portalenv_println() {
+  prefix="$1"
+  path="$2"
+  real="$2"
+  if [ "$ROOT" != "$path" ]; then
+    real=$(realpath -s --relative-to="$ROOT" "$path")
+  fi
+  info "$prefix: $real"
+}
 portalenv() {
-  info "       Source tree:  $ROOT"
-  info "           Builder:  $BUILD"
-  info "       Builder bin:  $BUILDER"
-  info "            Portal:  $PORTAL"
-  info "            Engine:  $ENGINE"
-  info "              Apps:  $APPS"
-  info "          Features:  $FEAT"
-  info "           Landing:  $OUT"
-  info "      Landing apps:  $APPS_OUT"
-  info "  Landing features:  $FEAT_OUT"
-  info "              Logs:  $LOGS"
-  info "          App logs:  $APPS_LOG"
-  info "      Feature logs:  $FEAT_LOG"
+  portalenv_println "     Source tree" "$ROOT"
+  portalenv_println "         Builder" "$BUILD"
+  portalenv_println "     Builder bin" "$BUILDER"
+  portalenv_println "          Portal" "$PORTAL"
+  portalenv_println "          Engine" "$ENGINE"
+  portalenv_println "            Apps" "$APPS"
+  portalenv_println "        Features" "$FEAT"
+  portalenv_println "         Landing" "$OUT"
+  portalenv_println "    Landing apps" "$APPS_OUT"
+  portalenv_println "Landing features" "$FEAT_OUT"
+  portalenv_println "            Logs" "$LOGS"
+  portalenv_println "        App logs" "$APPS_LOG"
+  portalenv_println "    Feature logs" "$FEAT_LOG"
 }
 
 hidelog() {
@@ -111,7 +122,24 @@ mkdir() {
   hidelog mkdir -p "$@"
 }
 rm() {
-  hidelog rm "$@"
+  hidelog rm -rf "$@"
+}
+
+init() {
+  rm "$LOGS" && \
+  mkdir "$OUT" && \
+  mkdir "$APPS_OUT" && \
+  mkdir "$FEAT_OUT" && \
+  mkdir "$LOGS" && \
+  mkdir "$APPS_LOG" && \
+  mkdir "$FEAT_LOG" && \
+  initlog "$LOGS/envsetup.log" || return 1
+  portalenv
+  mkbuilder || return 2
+}
+clean() {
+  rm "$OUT" && \
+  init || return 1
 }
 
 gobuild() {
@@ -123,13 +151,12 @@ gobuild() {
   cd - || return 4
 }
 
-mkdir "$LOGS"
-initlog "$LOGS/envsetup.log"
+mkbuilder() {
+  if ! gobuild "$BUILD" "$BUILDER"; then
+    fatal "Got $? when building the builder"
+    return 1 || exit 1
+  fi
+  "$BUILDER"
+}
 
-portalenv
-
-if ! gobuild "$BUILD" "$BUILDER"; then
-  fatal "Got $? when building the builder"
-  return 1 || exit 1
-fi
-"$BUILDER"
+init || return 1 || exit 1
