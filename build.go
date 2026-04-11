@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/user"
 	"strings"
 	"time"
 
@@ -12,12 +13,19 @@ import (
 )
 
 func main() {
-	host, err := os.Hostname()
+	osHost, err := os.Hostname()
 	if err != nil {
-		host = "builder"
+		osHost = "builder"
+	}
+	osUser, err := user.Current()
+	if err != nil {
+		osUser = &user.User{Username: "shell"}
 	}
 
-	opts := portal.NewPortalOptions().SetLog(true).SetExport(false)
+	opts := portal.NewPortalOptions().
+		SetLog(true).
+		SetExport(false).
+		SetID(osHost)
 	p := portal.NewPortal(opts)
 
 	initCmds := make([]string, 0)
@@ -31,7 +39,7 @@ func main() {
 		initCmds = append(initCmds, "sleep 100")
 		initCmds = append(initCmds, "exit -code 0") //Terminate the shell instead of prompting for input!
 	}
-	sh := shell.NewShell(p, host, false, true, initCmds...)
+	sh := shell.NewShell(p, osUser.Username, false, true, initCmds...)
 	if err := p.BatchFeatureAdd(sh); err != nil {
 		panic(err)
 	}
