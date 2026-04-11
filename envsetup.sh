@@ -11,10 +11,12 @@ cleanup
 
 log() {
   ls="$@"
+  if [ "$ls" == "" ]; then return; fi
   if [ -f "$LOGFILE" ]; then echo "$ls" >> "$LOGFILE"; fi
 }
 logerr() {
   ls="$@"
+  if [ "$ls" == "" ]; then return; fi
   if [ -f "$LOGFILE" ]; then echo "$ls" >> "$LOGFILE"; fi
 }
 initlog() {
@@ -22,12 +24,12 @@ initlog() {
 }
 
 info() {
-  ls="[*] $@"
+  ls=" $@"
   log "$ls"
   echo "$ls"
 }
 error() {
-  ls="[!] $@"
+  ls="!!! $@"
   logerr "$ls"
   echo "$ls" >&2
 }
@@ -124,6 +126,28 @@ mkdir() {
 rm() {
   hidelog rm -rf "$@"
 }
+pushd() {
+  hide pushd "$@"
+}
+popd() {
+  hide popd "$@"
+}
+
+gobuild() {
+  if [ -f "$2" ]; then
+    rm "$2" || return 1
+  fi
+  pushd "$1" || return 2
+  if ! go build -ldflags="-s -w" -o "$2"; then popd; return 3; fi
+  popd || return 4
+}
+
+mkbuilder() {
+  if ! gobuild "$BUILD" "$BUILDER"; then
+    fatal "Got $? when building the builder"
+    return 1 || exit 1
+  fi
+}
 
 init() {
   rm "$LOGS" && \
@@ -142,21 +166,9 @@ clean() {
   init || return 1
 }
 
-gobuild() {
-  if [ -f "$2" ]; then
-    rm "$2" || return 1
-  fi
-  cd "$1" || return 2
-  go build -ldflags="-s -w" -o "$2" || return 3
-  cd - || return 4
-}
-
-mkbuilder() {
-  if ! gobuild "$BUILD" "$BUILDER"; then
-    fatal "Got $? when building the builder"
-    return 1 || exit 1
-  fi
-  "$BUILDER"
-}
-
 init || return 1 || exit 1
+
+BUILDERPATH=$(dirname "$BUILDER")
+if [[ "$PATH" != *"$BUILDERPATH"* ]]; then
+  PATH="$BUILDERPATH:$PATH"
+fi

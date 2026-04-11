@@ -1,3 +1,5 @@
+github.com/FrameworkOSS/wire v0.0.0-20260130033327-5e2cbf86a333 h1:4PwjJK+r4vQIx4nbQx3K9ry4NEnXk4vmj5rbdiPohXM=
+github.com/FrameworkOSS/wire v0.0.0-20260130033327-5e2cbf86a333/go.mod h1:ai//uaLV3I6aOTWYPtZnzZFs9lzppuN5GYhZFM7c49k=
 github.com/JoshuaDoes/crunchio v0.0.4 h1:gHMvTT0rHCITPjhfxZ0huykyAUBnP94xzExyhnHcBCM=
 github.com/JoshuaDoes/crunchio v0.0.4/go.mod h1:Zk8lv1MlNNb5WpMcNSr8uBgleoE5G3PpXi6MD3JImOA=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
